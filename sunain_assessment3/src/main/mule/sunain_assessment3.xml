@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sns="http://www.mulesoft.org/schema/mule/sns" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:s3="http://www.mulesoft.org/schema/mule/s3" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/s3 http://www.mulesoft.org/schema/mule/s3/current/mule-s3.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/sns http://www.mulesoft.org/schema/mule/sns/current/mule-sns.xsd">
+	<s3:config name="Amazon_S3_Configuration" doc:name="Amazon S3 Configuration" doc:id="d4656597-be77-44ba-b5db-cc13ee1eeb3a" >
+		<s3:basic-connection accessKey="AKIAJWKZDPLHRO4WPP7A" secretKey="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" />
+	</s3:config>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="ab8f972f-bdd8-48aa-829f-d1364d4c1f31" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<sns:config name="Amazon_SNS_configuration" doc:name="Amazon SNS configuration" doc:id="f5561c95-efb6-4907-9d73-dcede2768335" >
+		<sns:basic-connection accessKey="AKIAJWKZDPLHRO4WPP7A" secretKey="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" region="US_EAST_2" testTopic="arn:aws:sns:us-east-2:211556697089:sunain"/>
+	</sns:config>
+	<flow name="sunain_assessment3Flow" doc:id="67e32cd0-e52c-40e7-8f43-a5e048eced98" >
+		<s3:new-object-trigger doc:name="On New Object" doc:id="32b3cee6-698b-4363-8275-dca9582c97cd" config-ref="Amazon_S3_Configuration" bucketName="apisero-assess-sunain-mittal" notificationQueueName="notif">
+			<scheduling-strategy >
+				<fixed-frequency />
+			</scheduling-strategy>
+		</s3:new-object-trigger>
+		<logger level="INFO" doc:name="Logger" doc:id="e75ab22e-d059-4198-bf00-283d07885029" />
+	</flow>
+	<flow name="sunain_assessment3Flow1" doc:id="70998cd6-bdd7-407b-9468-041a60bf6a27" >
+		<s3:deleted-object-trigger doc:name="On Deleted Object" doc:id="b360275d-96ef-4214-a245-3e9cd806ed94" config-ref="Amazon_S3_Configuration" bucketName="apisero-assess-sunain-mittal" notificationQueueName="notif">
+			<scheduling-strategy >
+				<fixed-frequency />
+			</scheduling-strategy>
+		</s3:deleted-object-trigger>
+		<logger level="INFO" doc:name="Logger" doc:id="4a08475e-6c82-478a-9ace-eee32fad8c59" />
+	</flow>
+	<flow name="sunain_assessment3Flow5" doc:id="ddaa2c5d-fb16-4c74-b38a-43f7ac0bc454" >
+	</flow>
+	<flow name="sunain_assessment3Flow4" doc:id="513670f3-79f2-4d33-8205-796f2cbbedb7" >
+		<http:listener doc:name="Listener" doc:id="7ba19103-2ee3-4ae3-a0f5-8b12cadcac2f" config-ref="HTTP_Listener_config" path="/path" allowedMethods="POST">
+		</http:listener>
+		<set-payload value="#[payload]" doc:name="Set Payload" doc:id="a525195f-95d5-4eee-9227-db1eb45df5e2" />
+		<logger level="INFO" doc:name="Logger" doc:id="9050771a-138d-43f5-b222-25edcfd2adbb" message="#[payload]"/>
+		<s3:get-object doc:name="Get object" doc:id="6f2f9497-a2d5-48ba-b98b-62909b1ec231" config-ref="Amazon_S3_Configuration" bucketName="apisero-assess-sunain-mittal" key="#[payload.key]"/>
+		<logger level="INFO" doc:name="Logger" doc:id="0fc15a0c-358a-412b-be54-ba26adcdac39" message="#[payload]"/>
+	</flow>
+	<flow name="sunain_assessment3Flow2" doc:id="35806a2c-534b-4ae0-aa07-727e5a4bda58" >
+		<http:listener doc:name="Listener" doc:id="65ff177a-c707-4188-90a9-c3dba77814c0" config-ref="HTTP_Listener_config" path="/test"/>
+		<s3:list-buckets doc:name="List buckets" doc:id="3a6c55f2-c129-4556-aa7f-c20a739a2db7" config-ref="Amazon_S3_Configuration" region="AP_MUMBAI"/>
+		<logger level="INFO" doc:name="Logger" doc:id="1e48d845-4632-420d-aa39-b52ba99ee332" />
+		<ee:transform doc:name="Transform Message" doc:id="f8ef05d4-9e5d-4fd3-9b9d-39f8b682425a" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="sunain_assessment4Flow" doc:id="0032b729-5bfe-4a6f-b21c-2559a63a076f" >
+		<http:listener doc:name="Listener" doc:id="1daf916e-248e-42a7-9bd3-e39b047bdb8d" config-ref="HTTP_Listener_config" path="/test2" />
+		<s3:list-objects doc:name="List objects" doc:id="2d358157-55be-4558-965b-4216f91fb4c4" config-ref="Amazon_S3_Configuration" bucketName="apisero-assess-sunain-mittal"/>
+		<logger level="INFO" doc:name="Logger" doc:id="3ee11715-1fdf-4fd6-8c39-645d704abc21" />
+		<ee:transform doc:name="Transform Message" doc:id="83ead575-5214-4f68-9132-a2a1661c3624" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="sunain_assessment3Flow3" doc:id="b6fa449a-4668-4d56-b4f4-3cf795187bfa" >
+		<http:listener doc:name="Listener" doc:id="8407ed6a-5e8b-43d9-acbd-faf17aec348b" config-ref="HTTP_Listener_config" path="/test3"/>
+		<sns:list-topics doc:name="List topics" doc:id="da751d8c-68d3-4879-9dc0-7d7bdbc7c9ce" config-ref="Amazon_SNS_configuration"/>
+		<logger level="INFO" doc:name="Logger" doc:id="d86e5416-edcc-4e61-aec5-d6e82b545c33" />
+		<ee:transform doc:name="Transform Message" doc:id="cb2c0e96-ee55-4c8b-81d1-508b1dd179db" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
